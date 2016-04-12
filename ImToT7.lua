@@ -1,4 +1,3 @@
-
 function explode(div,str)
     if (div=='') then return false end
     local pos,arr = 0,{}
@@ -11,17 +10,11 @@ function explode(div,str)
 end
 
 test_or_train_g = io.open("train_test_split.txt")
-
 bounding_boxes_g = io.open("bounding_boxes.txt")
-
 images_g = io.open("images.txt")
-
 part_locs_g = io.open("parts/part_locs.txt")
-
 mturk_g = io.open('parts/part_click_locs.txt')
-
 image_path = 't7/'
-
 
 for j = 1,11780 do 
     bb_info = explode(" ", tostring(bounding_boxes_g:read()))
@@ -69,5 +62,3 @@ for j = 1,11780 do
     filename = 'image' .. image_id .. '.t7'
     torch.save(image_path .. filename, info)
 end
-
-
