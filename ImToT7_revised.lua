@@ -8,6 +8,9 @@ function split(delimiter, str)
     return words
 end
 
+DEFAULT = -1 --DEFAULT tensor coefficient for missing data.
+NUM_IMAGES = 11788
+
 test_or_train_g = io.open('train_test_split.txt')
 bounding_boxes_g = io.open('bounding_boxes.txt')
 images_g = io.open('images.txt')
@@ -15,7 +18,7 @@ part_locs_g = io.open('parts/part_locs.txt')
 mturk_g = io.open('parts/part_click_locs.txt')
 image_path = 't7/'
 
-for j = 1,11780 do 
+for j = 1,NUM_IMAGES do 
     bb_info = split(' ', bounding_boxes_g:read())
     bb_coords = {}
     for i = 2,5 do 
@@ -40,18 +43,20 @@ for j = 1,11780 do
     parts = torch.Tensor(parts)
     
     --  MTurk, user generated data...proceed with caution? 
-    mturk_parts = {}
+    mturk_parts = {}; for c = 1,75 do table.insert(mturk_parts, {DEFAULT,DEFAULT,DEFAULT,DEFAULT}) end
+    counts = {}; for c = 1,15 do table.insert(counts, 0) end --counts number of each part seen so far
+    prevpid = 0
     for k = 1,75 do 
-        mturk_line = mturk_g:read()
-        if mturk_line==nil then break end
-        mturk_part_loc_info = split(' ', mturk_line) -- (image id, part id, x, y, visible, time); if invisible, x=y=0.
-                                                     -- part id's range from 1 through 15.
-                                                     -- time: how many seconds for MTurkers to label part.
-        entry = {}
-        for l = 3,6 do
-            table.insert(entry, mturk_part_loc_info[l])
-        end
-        table.insert(mturk_parts, entry)
+        ss = mturk_g:read(); if ss==nil then break end
+        if counts[1]==0 then print(ss) end
+        mturk_part_loc_info = split(' ', ss) -- (image id, part id, x, y, visible, time); if invisible, x=y=0.
+                                             -- part id's range from 1 through 15.
+                                             -- time: how many seconds for MTurkers to label part.
+        pid = tonumber(mturk_part_loc_info[2]); if not (prevpid<=pid) then break end
+        entry = {}; for l = 3,6 do table.insert(entry, mturk_part_loc_info[l]) end
+        mturk_parts[(pid-1)*5+1 + counts[pid]] = entry
+        counts[pid] = counts[pid] + 1
+        prevpid = pid
     end
     mturk_parts = torch.Tensor(mturk_parts)
     
