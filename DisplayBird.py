@@ -8,7 +8,7 @@ from PIL import Image, ImageTk
 from GenerateColors import generate_colors
 from ResizingCanvas import size_of_image, ResizingCanvas
 
-labels = '''BACK BEAK BELLY BREAST CROWN FOREHEAD LEFT-EYE LEFT-LEG LEFT-WING NAPE RIGHT-EYE RIGHT-LEG RIGHT-WING TAIL THROAT'''.split()
+labels = '''BACK BEAK BELLY BREAST CROWN FOREHEAD LEFT_EYE LEFT_LEG LEFT_WING NAPE RIGHT_EYE RIGHT_LEG RIGHT_WING TAIL THROAT'''.split()
 
 class Visualizer:
     def __init__(self, imageid, bounding_boxes_name):
@@ -68,7 +68,7 @@ class Visualizer:
         for box,color,label in zip(boxes,generate_colors(),labels):
             if not sum(box): continue #skip invisible parts
             self.draw_box(box, color, label=label)
-        
+
         self.canvas.tag_lower('boxes')
         self.canvas.tag_lower('image')
 
