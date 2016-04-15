@@ -14,25 +14,39 @@ def join(*boxes):
 
 from math import sqrt
 distance = lambda a,b: sqrt(sum((aa-bb)**2 for aa,bb in zip(a,b)))
-def averagebox(points):
+def makebox(center, radius):
+    x,y = center
+    return (x-radius,y-radius,x+radius,y+radius)
+def personal_square(bounding_box, keypoints):
+    ''' Finds disks (centered at each keypoint) maximal with respect to
+        the property of containing no other keypoint, and circumscribes squares around them. '''
+    personal_space = lambda p: min(distance(p,q) for q in keypoints if q is not p and sum(q))
+    return [intersect(bounding_box, makebox(center=p, radius=personal_space(p))) if sum(p) else (0,0,0,0) for p in keypoints]
+
+def common_container(points):
     return join(*[p+p for p in points])
-def guess_bounding_boxes(bounding_box, keypoints, N=30):
-    ''' Estimates bounding boxes of bird parts
-        given coordinates. Inputs:
-           `keypoints`, a length-15 list of (y,x) tuples each
-           representing the hand-keyed center of a bird part.
-           `bounding_box`, a (min_y, min_x, max_y, max_x) tuple
-           representing a hand-keyed bounding box for the whole bird.
-        Works by estimating Voronoi diagram (currently with an inefficient
-        and approximate hack).
-    '''
+def voronoi(bounding_box, keypoints, N=30):
+    ''' Works by estimating Voronoi diagram (currently with an inefficient and approximate hack). '''
     x,y,X,Y = bounding_box
     coordinates = [((float(xx)/N)*(X-x)+x, (float(yy)/N)*(Y-y)+y) for xx in range(N+1) for yy in range(N+1)]
     domains = {p:[p] for p in keypoints}
     for q in coordinates:
         pp = min((distance(p,q),p) for p in keypoints if q is not p and sum(p))[1]
         domains[pp].append(q)
-    return [intersect(bounding_box, averagebox(domains[p])) if sum(p) else (0,0,0,0) for p in keypoints]
+    return [intersect(bounding_box, common_container(domains[p])) if sum(p) else (0,0,0,0) for p in keypoints]
+
+def guess_bounding_boxes(bounding_box, keypoints):
+    ''' Estimates bounding boxes of bird parts
+        given coordinates. Inputs:
+           `keypoints`, a length-15 list of (y,x) tuples each
+           representing the hand-keyed center of a bird part.
+           `bounding_box`, a (min_y, min_x, max_y, max_x) tuple
+           representing a hand-keyed bounding box for the whole bird.
+        Works by averaging `personal_square` and `voronoi` algorithms.
+    '''
+    results = [algo(bounding_box, keypoints) for algo in (personal_square,voronoi)]
+    averagebox = lambda boxes: tuple(sum(cs)/len(results) for cs in zip(*boxes))
+    return [averagebox(boxes) for boxes in zip(*results)]
 
 import sys
 tocoor = lambda line: tuple(float(w) for w in line if w)
