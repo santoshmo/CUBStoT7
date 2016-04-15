@@ -55,11 +55,20 @@ class Visualizer:
             x,y,w,h = tocoor(f.read().split('\n')[int(self.imageid_entry.get())].split()[1:])
             bounding_box = y,x,y+h,x+w
             self.draw_box(bounding_box, 'black')
-        with open(self.bounding_boxes_name_entry.get()) as f:
-            boxes = [tocoor(line.split()) for line in f.read().split('\n') if line]
+
+        bounding_boxes_name = self.bounding_boxes_name_entry.get()
+        boxes = None
+        if bounding_boxes_name:
+            with open(self.bounding_boxes_name_entry.get()) as f:
+                boxes = [tocoor(line.split()) for line in f.read().split('\n') if line]
+        else:
+            with open('parts/part_locs.txt') as f:
+                imageid = int(self.imageid_entry.get())
+                boxes = [tocoor(line.split()[2:4])[::-1] for line in f.read().split('\n')[15*imageid:15*(imageid+1)]] #keypoints
         for box,color,label in zip(boxes,generate_colors(),labels):
             if not sum(box): continue #skip invisible parts
             self.draw_box(box, color, label=label)
+        
         self.canvas.tag_lower('boxes')
         self.canvas.tag_lower('image')
 

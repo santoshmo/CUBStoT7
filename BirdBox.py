@@ -1,23 +1,10 @@
 ''' Estimates bounding boxes of bird parts
     given coordinates. Python prototype.
     To be placed at same level as parts/.
-    Note: bird parts are described in parts/parts.txt:
-
-1 back
-2 beak
-3 belly
-4 breast
-5 crown
-6 forehead
-7 left eye
-8 left leg
-9 left wing
-10 nape
-11 right eye
-12 right leg
-13 right wing
-14 tail
-15 throat
+    Note: bird parts are described in parts/parts.txt.
+    Use:
+        python BirdBox.py 0 test0.bb
+    to write bounding boxes for image 0 into `test0.bb`
 '''
 
 def intersect(*boxes):
