@@ -22,12 +22,13 @@ class Visualizer:
         self.master = Tk()
         self.canvas = ResizingCanvas(self.master, height=500+2, width=800+2)
         self.canvas.pack(fill=BOTH,expand=YES)
-        b = Button(self.master, text="display", command=self.display); b.pack()
+        b = Button(self.master, text='display', command=self.display); b.pack()
         self.imageid_entry = Entry(self.master); self.imageid_entry.pack()
         self.imageid_entry.insert(0,str(imageid))
         self.bounding_boxes_name_entry = Entry(self.master)
         self.bounding_boxes_name_entry.insert(0,bounding_boxes_name)
         self.bounding_boxes_name_entry.pack()
+        self.master.bind('<Return>', lambda e: self.display())
 
     def refresh_canvas(self):
         self.canvas.delete('boxes')
