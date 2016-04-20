@@ -32,7 +32,7 @@ function fuse_boxes(boxes, operators, init)
    for i,box in ipairs(boxes) do
       for axis=0,2-I do
          for j,m in ipairs(operators) do
-            index = 2*(j-I)+axis+I
+            local index = 2*(j-I)+axis+I
             rtrn[index] = m(rtrn[index], box[index])
          end
       end
@@ -49,7 +49,7 @@ function join_boxes(boxes)
 end
 function average_boxes(boxes)
    --Returns corner-wise mean box.
-   sum = function(a,b) return a+b end
+   local sum = function(a,b) return a+b end
    local sum_box = fuse_boxes(boxes, {sum,sum}, {0,0, 0,0})
    for i,p in ipairs(sum_box) do
       sum_box[i] = sum_box[i]/#boxes
@@ -72,17 +72,17 @@ end
 
 function test_fusion()
    --Tests `fuse_boxes`, `intersect_boxes`, `join_boxes`, `boxes_are_equivalent`.
-   no_squares = {}
+   local no_squares = {}
    assert(boxes_are_equivalent({-inf,-inf, inf,inf},intersect_boxes(no_squares)))
    assert(boxes_are_equivalent({inf,inf, -inf,-inf},join_boxes(no_squares)))
    
-   two_squares = {{0,0,2,2},{1,1,3,3}}
+   local two_squares = {{0,0,2,2},{1,1,3,3}}
    assert(boxes_are_equivalent({1,1,2,2},intersect_boxes(two_squares)))
    assert(boxes_are_equivalent({0,0,3,3},join_boxes(two_squares)))
    assert(not (boxes_are_equivalent({0,0,3,3},intersect_boxes(two_squares))))
    assert(not (boxes_are_equivalent({1,1,2,2},join_boxes(two_squares))))
    
-   equal_squares = {{-1,-1,1,1},{-1,-1,1,1},{-1,-1,1,1}}
+   local equal_squares = {{-1,-1,1,1},{-1,-1,1,1},{-1,-1,1,1}}
    assert(boxes_are_equivalent({-1,-1,1,1},intersect_boxes(equal_squares)))
    assert(boxes_are_equivalent({-1,-1,1,1},join_boxes(equal_squares)))
    assert(not (boxes_are_equivalent({-inf,-inf, inf,inf},intersect_boxes(equal_squares))))
@@ -90,6 +90,7 @@ function test_fusion()
    
    print('TESTS PASSED: fuse_boxes, intersect_boxes, join_boxes, boxes_are_equivalent')
 end
+test_fusion()
 
 function is_origin(point)
    --Returns true if and only if initial two elements are 0.0
@@ -101,7 +102,7 @@ end
 
 function distance(point0, point1)
    --Returns Euclidean distance between given points.
-   sum = 0.0
+   local sum = 0.0
    for i=0,2-1 do
       sum = sum + (point1[i+I]-point0[i+I])^2 --In Lua, x^y denotes a power operation
    end
@@ -113,7 +114,7 @@ end
 
 function makesquare(center, radius)
    --Returns a box centered on `center` and of sidelength 2*radius.
-   x,y = center[0+I],center[1+I]
+   local x,y = center[0+I],center[1+I]
    return {x-radius,y-radius,x+radius,y+radius}
 end
 
@@ -122,7 +123,7 @@ function personal_space(p, keypoints)
    --   that is neither `p` nor the origin. If no such point exists, returns
    --    infinity. Used in `personal_squares`.
    --]]
-   min_distance = inf
+   local min_distance = inf
    for i,q in ipairs(keypoints) do
       if q==p or is_origin(q) then goto continue end
       min_distance = math.min(min_distance, distance(p,q))
@@ -131,7 +132,7 @@ function personal_space(p, keypoints)
    return min_distance
 end
 
-function personal_squares(bounding_box, keypoints)
+function personal_squares(bbox, keypoints)
    --[[For each non-origin keypoint, finds disk centered at that keypoint
    --   maximal with respect to the property of containing no other keypoint,
    --    and computes the axis-oriented circumscribing square. For keypoints
@@ -144,7 +145,7 @@ function personal_squares(bounding_box, keypoints)
          table.insert(rtrn, {0,0,0,0})
       else
          radius = personal_space(kp, keypoints)
-         table.insert(rtrn, intersect_boxes({bounding_box, makesquare(kp, radius)}))
+         table.insert(rtrn, intersect_boxes({bbox, makesquare(kp, radius)}))
       end
    end
    return rtrn
@@ -166,7 +167,7 @@ function voronoi(bbox, keypoints)
          local closest_i = -1; local least_dist = inf;
          for i,p in pairs(keypoints) do
             if p==coordinate or is_origin(p) then goto continue end
-            d = distance(p,coordinate)
+            local d = distance(p,coordinate)
             if d>=least_dist then goto continue end
             least_dist = d
             closest_i = i
@@ -185,15 +186,15 @@ function voronoi(bbox, keypoints)
       if is_origin(p) then
          rtrn[i] = {0,0,0,0}
       else
-         rtrn[i] = intersect_boxes({bounding_box, join_boxes(domains[i])})
+         rtrn[i] = intersect_boxes({bbox, join_boxes(domains[i])})
       end
    end
    return rtrn
 end
 
 function expand(box, scale)
-   x,y = (box[2+I]+box[0+I])/2, (box[3+I]+box[1+I])/2 --center
-   w,h = (box[2+I]-box[0+I])/2, (box[3+I]-box[1+I])/2 --halfwidth, halfheight
+   local x,y = (box[2+I]+box[0+I])/2, (box[3+I]+box[1+I])/2 --center
+   local w,h = (box[2+I]-box[0+I])/2, (box[3+I]-box[1+I])/2 --halfwidth, halfheight
    return {x-w*scale, y-h*scale,
            x+w*scale, y+h*scale}
 end
@@ -209,9 +210,31 @@ function tuned_bboxes(bbox, keypoints)
    return bboxes
 end
 
-bounding_box = {0,0,10,10}
-keypoints = {{0,0},{1,1},{2,2},{4,4},{0,10},{10,10},{10,0}} --recall that points equal to the origin will be ignored
-for i,box in ipairs(tuned_bboxes(bounding_box, keypoints)) do
-   print(keypoints[i][0+I],keypoints[i][1+I])
-   print_box(box)
+function test_tuned_bboxes()
+   --Tests `tuned_bboxes`, and hence indirectly `voronoi`, `personal_squares`, `expand`, and `average_boxes`.   
+   local bbox = {0,0,10,10}
+   local corners = {{0,0},{0,10},{10,10},{10,0}}
+   local corners_answers = {{0, 0, 0, 0},
+                            {0, 0, 7.5, 10},
+                            {2.75, 2.5, 10, 10},
+                            {0, 0, 10, 7.25}} 
+   local answers = tuned_bboxes(bbox, corners)
+   for i,c in ipairs(corners) do
+      assert(boxes_are_equivalent(answers[i], corners_answers[i]))
+   end
+   
+   local bbox = {0,0,10,10}
+   local withmiddle = {{0,0}, {4,3}, {0,10},{10,10},{10,0}}
+   local withmiddle_answers = {{0, 0, 0, 0},
+                               {0, 0, 9.604101966249685, 8.854101966249685},
+                               {0, 2.9688711258507254, 6.531128874149275, 10},
+                               {3.1402277713535565, 2.8902277713535565, 10, 10},
+                               {4.395898033750315, 0, 10, 5.604101966249685}}
+   local answers = tuned_bboxes(bbox, withmiddle)
+   for i,c in ipairs(withmiddle) do
+      assert(boxes_are_equivalent(answers[i], withmiddle_answers[i]))
+   end
+   
+   print('TESTS PASSED: tuned_bboxes, voronoi, personal_squares, expand, average_boxes')
 end
+test_tuned_bboxes()

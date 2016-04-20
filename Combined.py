@@ -47,7 +47,7 @@ def guess_bounding_boxes(bounding_box, keypoints):
     results = [algo(bounding_box, keypoints) for algo in (personal_square,voronoi)]
     averagebox = lambda boxes: tuple(sum(cs)/len(results) for cs in zip(*boxes))
     return [averagebox(boxes) for boxes in zip(*results)]
-
+    
 import sys
 tocoor = lambda line: tuple(float(w) for w in line if w)
 tostring = lambda box: ' '.join(str(c) for c in box)
