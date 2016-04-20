@@ -18,10 +18,10 @@ part_locs_g = io.open('parts/part_locs.txt')
 mturk_g = io.open('parts/part_click_locs.txt')
 image_path = 't7/'
 
-for j = 1,NUM_IMAGES do 
+for j = 1,NUM_IMAGES do
     bb_info = split(' ', bounding_boxes_g:read())
     bb_coords = {}
-    for i = 2,5 do 
+    for i = 2,5 do
         table.insert(bb_coords, tonumber(bb_info[i])) -- convert from string to num
     end
     bb_coords = torch.Tensor(bb_coords) -- 1x4 tensor (x,y, width,height)
@@ -29,9 +29,9 @@ for j = 1,NUM_IMAGES do
     class_id = tonumber(string.sub(image_info[2], 1,3)) -- species id (200 possible)
     image_id = tonumber(image_info[1]) -- image id (11780 possible)
     test_or_train = tonumber(split(' ', test_or_train_g:read())[2]) -- suggested data set
-    
+
     parts = {}
-    for k = 1,15 do 
+    for k = 1,15 do
         part_loc_info = split(' ', part_locs_g:read()) -- (image id, part id, x, y, visible); if invisible, x=y=0.
                                                        -- part id's range from 1 through 15.
         entry = {}
@@ -41,12 +41,12 @@ for j = 1,NUM_IMAGES do
         table.insert(parts, entry)
     end
     parts = torch.Tensor(parts)
-    
-    --  MTurk, user generated data...proceed with caution? 
+
+    --  MTurk, user generated data...proceed with caution?
     mturk_parts = {}; for c = 1,75 do table.insert(mturk_parts, {DEFAULT,DEFAULT,DEFAULT,DEFAULT}) end
     counts = {}; for c = 1,15 do table.insert(counts, 0) end --counts number of each part seen so far
     prevpid = 0
-    for k = 1,75 do 
+    for k = 1,75 do
         ss = mturk_g:read(); if ss==nil then break end
         if counts[1]==0 then print(ss) end
         mturk_part_loc_info = split(' ', ss) -- (image id, part id, x, y, visible, time); if invisible, x=y=0.
@@ -59,8 +59,8 @@ for j = 1,NUM_IMAGES do
         prevpid = pid
     end
     mturk_parts = torch.Tensor(mturk_parts)
-    
-    -- write data to object and save 
+
+    -- write data to object and save
     info = {}
     info.image_id = image_id
     info.class_id = class_id
