@@ -1,34 +1,12 @@
---[[
-1AM Convert basic script to Lua
-
-2AM Finish even Voronoi in Lua
-
-3AM Try Scott's GAN on anything
-
-4AM Inspect his bird-part generation code
-
-5AM Take Stock: 4 more hours!
-
-6AM
-
-7AM
-
-8AM
-
-9AM Leave for Scott Meeting, with Gwyn $
-
---]]
-
---BOX FUSION
 I = 1 --[[Lua is 1-indexed; we write code as if it is 0-indexed,
       --   adopting idiom table[index+I] for array accesses. 
-      --    We avoid embracing the direct 1-indexing because
+      --    We avoid embracing 1-indexing directly because
       --     0-indexing is familiar and hence less liable to mistakes,
-      --      and also for the clarity of thought it affords, as
+      --      and also for the clarity of thought 0-indexing affords, as
       --       explained in Dijkstra's note EWD831. To distinguish
       --        a `meaningful` 1 from an index-correcting 1, we use
       --         `I` for the indices. This allows generalization to 
-      --          arbitrary indices, e.g. if Lua ever becomes 2-indexed.
+      --          arbitrary index conventions, e.g. if Lua ever becomes 2-indexed.
       --]]
 function copy_box(box)
    --Shallow table copy
@@ -68,6 +46,15 @@ end
 function join_boxes(boxes)
    --Returns the smallest common container.
    return fuse_boxes(boxes, {math.min,math.max}, {inf,inf, -inf,-inf})
+end
+function average_boxes(boxes)
+   --Returns corner-wise mean box.
+   sum = function(a,b) return a+b end
+   local sum_box = fuse_boxes(boxes, {sum,sum}, {0,0, 0,0})
+   for i,p in ipairs(sum_box) do
+      sum_box[i] = sum_box[i]/#boxes
+   end
+   return sum_box
 end
 
 function boxes_are_equivalent(box0, box1)
@@ -125,6 +112,7 @@ function test_distance()
 end
 
 function makesquare(center, radius)
+   --Returns a box centered on `center` and of sidelength 2*radius.
    x,y = center[0+I],center[1+I]
    return {x-radius,y-radius,x+radius,y+radius}
 end
@@ -164,7 +152,7 @@ end
 
 voronoi_N = 30
 function voronoi(bbox, keypoints)
-   --Works by estimating Voronoi diagram (currently with an inefficient and approximate hack).
+   --Estimating Voronoi diagram (currently with an inefficient and approximate hack).
    local x,y,X,Y = bbox[0+I],bbox[1+I],bbox[2+I],bbox[3+I]
    local domains = {}
    for i,p in ipairs(keypoints) do
@@ -189,8 +177,6 @@ function voronoi(bbox, keypoints)
          for m=0,3 do
              domains[closest_i][#domains[closest_i]][m+I] = coordinate[m%2+I]
          end
-         --local box = {coordinate[0],coordinate[1],coordinate[0],coordinate[1]}
-         --table.insert(domains[closest_i], {1,2,3,4})
       end
    end
    
@@ -205,8 +191,27 @@ function voronoi(bbox, keypoints)
    return rtrn
 end
 
+function expand(box, scale)
+   x,y = (box[2+I]+box[0+I])/2, (box[3+I]+box[1+I])/2 --center
+   w,h = (box[2+I]-box[0+I])/2, (box[3+I]-box[1+I])/2 --halfwidth, halfheight
+   return {x-w*scale, y-h*scale,
+           x+w*scale, y+h*scale}
+end
+
+function tuned_bboxes(bbox, keypoints) 
+   local ebbox = expand(bbox, 1.5)
+   local tbboxes = personal_squares(ebbox, keypoints)
+   local vbboxes = voronoi(ebbox, keypoints)
+   local bboxes = {}
+   for i,p in ipairs(keypoints) do
+      table.insert(bboxes, intersect_boxes({bbox, average_boxes({tbboxes[i], vbboxes[i]})}))
+   end
+   return bboxes
+end
+
 bounding_box = {0,0,10,10}
-keypoints = {{0,0},{1,1},{2,2},{4,4}} --recall that the origin will be ignored
-for i,box in ipairs(voronoi(bounding_box, keypoints)) do
+keypoints = {{0,0},{1,1},{2,2},{4,4},{0,10},{10,10},{10,0}} --recall that points equal to the origin will be ignored
+for i,box in ipairs(tuned_bboxes(bounding_box, keypoints)) do
+   print(keypoints[i][0+I],keypoints[i][1+I])
    print_box(box)
 end
